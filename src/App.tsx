@@ -9,6 +9,7 @@ import { MasteryQuiz } from './components/MasteryQuiz';
 import { GrammarNotes } from './components/GrammarNotes';
 import { SplashScreen } from './components/SplashScreen';
 import { ModeSelection } from './components/ModeSelection';
+import { AirplaneTransition } from './components/AirplaneTransition';
 import { VerbItem, MasteryState } from './types';
 import { VERBS_DATA } from './data/verbsData';
 import { EXTENDED_VERBS_DATA } from './data/extendedVerbsData';
@@ -18,7 +19,7 @@ const STORAGE_KEY = 'ten_verbs_mastery_v1';
 const THEME_KEY = 'ingless_theme';
 const MODE_KEY = 'ingless_mode';
 
-type AppPhase = 'splash' | 'modeSelection' | 'app';
+type AppPhase = 'splash' | 'modeSelection' | 'transition' | 'app';
 
 export default function App() {
   // App Phase
@@ -98,7 +99,7 @@ export default function App() {
 
   const handleSelectMode = (mode: 'core' | 'extended') => {
     setActiveMode(mode);
-    setPhase('app');
+    setPhase('transition');
   };
 
   const handleChangeMode = () => {
@@ -111,6 +112,10 @@ export default function App() {
 
   if (phase === 'modeSelection') {
     return <ModeSelection onSelectMode={handleSelectMode} initialMode={activeMode} />;
+  }
+
+  if (phase === 'transition') {
+    return <AirplaneTransition onComplete={() => setPhase('app')} />;
   }
 
   return (
