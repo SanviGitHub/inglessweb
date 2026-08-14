@@ -1,0 +1,6 @@
+{
+  "name": "10 Verbos Esenciales en Inglés",
+  "description": "Aprende y domina los primeros 10 verbos irregulares en inglés con explicaciones claras, pronunciación de audio, ejemplos cotidianos y ejercicios interactivos.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
