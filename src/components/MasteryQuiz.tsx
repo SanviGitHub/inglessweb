@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Trophy, CheckCircle2, XCircle, RotateCcw, ArrowRight } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { VERBS_DATA } from '../data/verbsData';
 import { VerbItem, MasteryState } from '../types';
 
 interface QuizQuestion {
@@ -19,12 +18,14 @@ interface MasteryQuizProps {
   onMasterVerb: (verbId: string) => void;
   masteryState: MasteryState;
   onSelectVerbForDetail: (verb: VerbItem) => void;
+  verbsData: VerbItem[];
 }
 
 export const MasteryQuiz: React.FC<MasteryQuizProps> = ({
   onMasterVerb,
   masteryState,
   onSelectVerbForDetail,
+  verbsData,
 }) => {
   const [isQuizStarted, setIsQuizStarted] = useState(false);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
@@ -35,7 +36,7 @@ export const MasteryQuiz: React.FC<MasteryQuizProps> = ({
   const [isQuizFinished, setIsQuizFinished] = useState(false);
 
   const generateQuiz = () => {
-    const generated: QuizQuestion[] = VERBS_DATA.map((v, index) => {
+    const generated: QuizQuestion[] = verbsData.map((v, index) => {
       if (v.id === 'can') {
         return {
           id: index,
@@ -87,7 +88,7 @@ export const MasteryQuiz: React.FC<MasteryQuizProps> = ({
           `${v.infinitive} - ${v.participle} - ${v.past}`,
           `${v.infinitive} - ${v.infinitive}ed - ${v.infinitive}ed`,
           `${v.infinitive} - ${v.past} - ${v.infinitive}`,
-        ].sort(() => Math.random() - 0.5),
+        ].filter((val, i, arr) => arr.indexOf(val) === i).sort(() => Math.random() - 0.5),
         explanation: `La secuencia correcta es: ${v.infinitive} (infinitivo) -> ${v.past} (pasado) -> ${v.participle} (participio).`,
         formTested: 'past',
       };
@@ -131,8 +132,9 @@ export const MasteryQuiz: React.FC<MasteryQuizProps> = ({
       setIsSubmitted(false);
     } else {
       setIsQuizFinished(true);
-      const correctTotal = userAnswers.filter((a) => a.isCorrect).length + (selectedAnswer === questions[currentIdx].correctAnswer ? 1 : 0);
-      if (correctTotal >= 8) {
+      const correctTotal = userAnswers.filter((a) => a.isCorrect).length + (selectedAnswer === questions[currentIdx]?.correctAnswer ? 1 : 0);
+      const passingScore = Math.floor(questions.length * 0.8);
+      if (correctTotal >= passingScore) {
         confetti({
           particleCount: 100,
           spread: 80,
@@ -150,35 +152,35 @@ export const MasteryQuiz: React.FC<MasteryQuizProps> = ({
       
       {!isQuizStarted ? (
         /* Welcome Bento Grid */
-        <div className="bg-white border border-slate-200 rounded-3xl p-8 sm:p-12 shadow-xs text-center space-y-7">
-          <div className="w-16 h-16 rounded-3xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center mx-auto shadow-xs">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 sm:p-12 shadow-xs text-center space-y-7">
+          <div className="w-16 h-16 rounded-3xl bg-indigo-50 dark:bg-indigo-900/40 border border-indigo-100 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mx-auto shadow-xs">
             <Trophy className="w-8 h-8" />
           </div>
 
           <div className="space-y-2">
-            <span className="text-[10px] font-extrabold uppercase tracking-widest text-indigo-600 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 inline-block">
+            <span className="text-[10px] font-extrabold uppercase tracking-widest text-indigo-600 dark:text-indigo-400 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/40 border border-indigo-100 dark:border-indigo-800 inline-block">
               Evaluación Final
             </span>
-            <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
-              Test de Dominio de los 10 Verbos
+            <h2 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
+              Test de Dominio de los {verbsData.length} Verbos
             </h2>
-            <p className="text-slate-500 text-sm sm:text-base max-w-lg mx-auto leading-relaxed">
-              Pon a prueba tu conocimiento de las 3 formas (Infinitivo, Pasado Simple y Pasado Participio) de los 10 verbos irregulares esenciales.
+            <p className="text-slate-500 dark:text-slate-400 text-sm sm:text-base max-w-lg mx-auto leading-relaxed">
+              Pon a prueba tu conocimiento de las 3 formas (Infinitivo, Pasado Simple y Pasado Participio) de los verbos irregulares seleccionados.
             </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-xl mx-auto text-left">
-            <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl">
-              <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider block">10 Preguntas</span>
-              <span className="text-sm font-bold text-slate-800">1 pregunta por cada verbo</span>
+            <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-2xl">
+              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-extrabold uppercase tracking-wider block">{verbsData.length} Preguntas</span>
+              <span className="text-sm font-bold text-slate-800 dark:text-slate-200">1 pregunta por cada verbo</span>
             </div>
-            <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl">
-              <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider block">Feedback Inmediato</span>
-              <span className="text-sm font-bold text-slate-800">Explicaciones claras en español</span>
+            <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-2xl">
+              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-extrabold uppercase tracking-wider block">Feedback Inmediato</span>
+              <span className="text-sm font-bold text-slate-800 dark:text-slate-200">Explicaciones claras en español</span>
             </div>
-            <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl">
-              <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider block">Diagnóstico</span>
-              <span className="text-sm font-bold text-slate-800">Evaluación de maestría final</span>
+            <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-2xl">
+              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-extrabold uppercase tracking-wider block">Diagnóstico</span>
+              <span className="text-sm font-bold text-slate-800 dark:text-slate-200">Evaluación de maestría final</span>
             </div>
           </div>
 
@@ -194,49 +196,49 @@ export const MasteryQuiz: React.FC<MasteryQuizProps> = ({
             </button>
           </div>
         </div>
-      ) : !isQuizFinished ? (
+      ) : !isQuizFinished && currentQ ? (
         /* Question Bento Box */
-        <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
+        <div key={`question-wrapper-${currentQ.id}`} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
           
           {/* Progress Header */}
-          <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
             <div className="flex items-center gap-2">
-              <span className="bg-slate-100 px-3 py-1 rounded-xl text-xs font-mono font-bold text-indigo-700 border border-slate-200">
-                Pregunta {currentIdx + 1} / 10
+              <span className="bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-xl text-xs font-mono font-bold text-indigo-700 dark:text-indigo-400 border border-slate-200 dark:border-slate-700">
+                Pregunta {currentIdx + 1} / {questions.length}
               </span>
-              <span className="text-xs text-slate-500 font-medium">
-                Aciertos: <strong className="text-emerald-600">{correctCount}</strong>
+              <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                Aciertos: <strong className="text-emerald-600 dark:text-emerald-500">{correctCount}</strong>
               </span>
             </div>
 
-            <div className="w-32 sm:w-48 bg-slate-100 h-2.5 rounded-full overflow-hidden border border-slate-200">
+            <div className="w-32 sm:w-48 bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700">
               <div 
                 className="h-full bg-indigo-600 transition-all duration-300 rounded-full"
-                style={{ width: `${((currentIdx + 1) / 10) * 100}%` }}
+                style={{ width: `${((currentIdx + 1) / questions.length) * 100}%` }}
               />
             </div>
           </div>
 
           {/* Question Text */}
           <div className="space-y-1.5">
-            <div className="text-xs font-bold uppercase tracking-wider text-indigo-600 font-mono">
+            <div className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 font-mono">
               Verbo: {currentQ.verb.infinitive} ({currentQ.verb.spanish})
             </div>
-            <h3 className="text-xl sm:text-2xl font-black text-slate-900 leading-snug">
+            <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 leading-snug">
               {currentQ.questionText}
             </h3>
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               {currentQ.questionSubtitle}
             </p>
           </div>
 
           {/* Options Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-            {currentQ.options.map((opt) => {
+            {currentQ.options.map((opt, optIdx) => {
               const isSelected = selectedAnswer === opt;
               const isCorrect = opt === currentQ.correctAnswer;
 
-              let style = 'bg-white border-2 border-slate-200 text-slate-800 hover:border-indigo-500 hover:bg-indigo-50/30';
+              let style = 'bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-300 hover:border-indigo-500 dark:hover:border-indigo-500 hover:bg-indigo-50/30 dark:hover:bg-indigo-900/20';
 
               if (isSubmitted) {
                 if (isCorrect) {
@@ -244,17 +246,17 @@ export const MasteryQuiz: React.FC<MasteryQuizProps> = ({
                 } else if (isSelected && !isCorrect) {
                   style = 'bg-rose-600 text-white border-rose-600';
                 } else {
-                  style = 'bg-slate-50 border-slate-200 text-slate-400 opacity-60';
+                  style = 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 opacity-60';
                 }
               } else if (isSelected) {
-                style = 'bg-indigo-50 border-2 border-indigo-600 text-indigo-900';
+                style = 'bg-indigo-50 dark:bg-indigo-900/30 border-2 border-indigo-600 dark:border-indigo-500 text-indigo-900 dark:text-indigo-100';
               }
 
               return (
                 <button
-                  key={opt}
+                  key={`${currentQ.id}-opt-${optIdx}`}
                   type="button"
-                  id={`quiz-opt-${opt}`}
+                  id={`quiz-opt-${optIdx}`}
                   disabled={isSubmitted}
                   onClick={() => handleSelectOption(opt)}
                   className={`p-4 rounded-2xl border text-sm sm:text-base font-black font-mono text-left flex items-center justify-between transition-all cursor-pointer ${style}`}
@@ -271,28 +273,28 @@ export const MasteryQuiz: React.FC<MasteryQuizProps> = ({
           {isSubmitted && (
             <div className={`p-4 rounded-2xl border text-xs sm:text-sm ${
               selectedAnswer === currentQ.correctAnswer
-                ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
-                : 'bg-rose-50 border-rose-200 text-rose-900'
+                ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800/30 text-emerald-900 dark:text-emerald-300'
+                : 'bg-rose-50 dark:bg-rose-900/20 border-rose-200 dark:border-rose-800/30 text-rose-900 dark:text-rose-300'
             }`}>
               <div className="font-bold flex items-center gap-1.5 mb-1">
                 {selectedAnswer === currentQ.correctAnswer ? (
                   <>
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-500" />
                     <span>¡Correcto!</span>
                   </>
                 ) : (
                   <>
-                    <XCircle className="w-4 h-4 text-rose-600" />
+                    <XCircle className="w-4 h-4 text-rose-600 dark:text-rose-500" />
                     <span>Respuesta incorrecta.</span>
                   </>
                 )}
               </div>
-              <p className="text-slate-700">{currentQ.explanation}</p>
+              <p className="text-slate-700 dark:text-slate-300">{currentQ.explanation}</p>
             </div>
           )}
 
           {/* Bottom Actions */}
-          <div className="flex items-center justify-end pt-4 border-t border-slate-100">
+          <div className="flex items-center justify-end pt-4 border-t border-slate-100 dark:border-slate-800">
             {!isSubmitted ? (
               <button
                 type="button"
@@ -302,7 +304,7 @@ export const MasteryQuiz: React.FC<MasteryQuizProps> = ({
                 className={`px-6 py-3 rounded-2xl text-sm font-bold transition-all ${
                   selectedAnswer
                     ? 'bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer shadow-xs'
-                    : 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-200 dark:border-slate-700'
                 }`}
               >
                 Comprobar
@@ -323,23 +325,23 @@ export const MasteryQuiz: React.FC<MasteryQuizProps> = ({
         </div>
       ) : (
         /* Results Bento Box */
-        <div className="bg-white border border-slate-200 rounded-3xl p-8 sm:p-10 shadow-xs space-y-8 text-center">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 sm:p-10 shadow-xs space-y-8 text-center">
           
-          <div className="w-20 h-20 rounded-3xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center mx-auto shadow-xs">
+          <div className="w-20 h-20 rounded-3xl bg-indigo-50 dark:bg-indigo-900/40 border border-indigo-100 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mx-auto shadow-xs">
             <Trophy className="w-10 h-10" />
           </div>
 
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-bold uppercase">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/40 border border-indigo-100 dark:border-indigo-800 text-indigo-700 dark:text-indigo-400 text-xs font-bold uppercase">
               Diagnóstico de Dominio
             </div>
-            <h2 className="text-3xl font-black text-slate-900 tracking-tight">
-              Puntuación Final: {correctCount} / 10 ({correctCount * 10}%)
+            <h2 className="text-3xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
+              Puntuación Final: {correctCount} / {questions.length} ({Math.round((correctCount / questions.length) * 100)}%)
             </h2>
-            <p className="text-slate-500 text-sm max-w-md mx-auto">
-              {correctCount === 10
-                ? '¡Dominio perfecto! Conoces con exactitud las 3 formas y la aplicación de los primeros 10 verbos irregulares.'
-                : correctCount >= 7
+            <p className="text-slate-500 dark:text-slate-400 text-sm max-w-md mx-auto">
+              {correctCount === questions.length
+                ? '¡Dominio perfecto! Conoces con exactitud las 3 formas y la aplicación de los verbos.'
+                : correctCount >= questions.length * 0.7
                 ? '¡Muy buen trabajo! Tienes una base sólida, solo necesitas repasar un par de detalles.'
                 : 'Buen intento. Te recomendamos repasar los verbos en la tabla y practicar con los ejemplos cotidianos.'}
             </p>
@@ -347,7 +349,7 @@ export const MasteryQuiz: React.FC<MasteryQuizProps> = ({
 
           {/* Breakdown Table / List */}
           <div className="text-left space-y-3 pt-2">
-            <h4 className="text-xs uppercase font-extrabold text-slate-400 tracking-wider">
+            <h4 className="text-xs uppercase font-extrabold text-slate-400 dark:text-slate-500 tracking-wider">
               Revisión detallada de cada verbo:
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -357,27 +359,27 @@ export const MasteryQuiz: React.FC<MasteryQuizProps> = ({
                   onClick={() => onSelectVerbForDetail(ans.question.verb)}
                   className={`p-3.5 rounded-2xl border flex items-center justify-between cursor-pointer hover:border-indigo-400 transition-all ${
                     ans.isCorrect
-                      ? 'bg-emerald-50/60 border-emerald-200 text-emerald-900'
-                      : 'bg-rose-50/60 border-rose-200 text-rose-900'
+                      ? 'bg-emerald-50/60 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800/30 text-emerald-900 dark:text-emerald-300'
+                      : 'bg-rose-50/60 dark:bg-rose-900/20 border-rose-200 dark:border-rose-800/30 text-rose-900 dark:text-rose-300'
                   }`}
                 >
                   <div className="flex items-center gap-2.5">
                     {ans.isCorrect ? (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-500 flex-shrink-0" />
                     ) : (
-                      <XCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
+                      <XCircle className="w-4 h-4 text-rose-600 dark:text-rose-500 flex-shrink-0" />
                     )}
                     <div>
-                      <div className="font-mono font-bold text-slate-900 text-sm">
+                      <div className="font-mono font-bold text-slate-900 dark:text-slate-100 text-sm">
                         {ans.question.verb.infinitive} ({ans.question.verb.past} / {ans.question.verb.participle})
                       </div>
-                      <div className="text-xs text-slate-500">
+                      <div className="text-xs text-slate-500 dark:text-slate-400">
                         {ans.question.verb.spanish}
                       </div>
                     </div>
                   </div>
 
-                  <span className="text-xs font-bold text-indigo-600 underline">
+                  <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 underline">
                     Repasar
                   </span>
                 </div>
@@ -386,7 +388,7 @@ export const MasteryQuiz: React.FC<MasteryQuizProps> = ({
           </div>
 
           {/* Actions */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4 border-t border-slate-100">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
             <button
               type="button"
               id="retake-quiz-btn"

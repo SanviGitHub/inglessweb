@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Volume2, Search, ArrowRight, Sparkles, AlertCircle, CheckCircle2, BookOpen } from 'lucide-react';
-import { VERBS_DATA } from '../data/verbsData';
 import { VerbItem, MasteryState, UserVerbProgress } from '../types';
 import { playSpeech } from '../utils/speech';
 
@@ -8,12 +7,14 @@ interface VerbTableProps {
   onSelectVerb: (verb: VerbItem) => void;
   masteryState: MasteryState;
   audioRate: number;
+  verbsData: VerbItem[];
 }
 
 export const VerbTable: React.FC<VerbTableProps> = ({
   onSelectVerb,
   masteryState,
   audioRate,
+  verbsData,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -21,7 +22,7 @@ export const VerbTable: React.FC<VerbTableProps> = ({
 
   const values = Object.values(masteryState) as UserVerbProgress[];
   const masteredCount = values.filter((v) => v.mastered).length;
-  const progressPercent = Math.round((masteredCount / 10) * 100);
+  const progressPercent = Math.round((masteredCount / verbsData.length) * 100) || 0;
 
   const handleSpeak = (e: React.MouseEvent, text: string) => {
     e.stopPropagation();
@@ -29,7 +30,7 @@ export const VerbTable: React.FC<VerbTableProps> = ({
     playSpeech(text, audioRate, () => setActiveSpeechWord(null));
   };
 
-  const filteredVerbs = VERBS_DATA.filter((verb) => {
+  const filteredVerbs = verbsData.filter((verb) => {
     const matchesSearch =
       verb.infinitive.toLowerCase().includes(searchQuery.toLowerCase()) ||
       verb.past.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -55,7 +56,7 @@ export const VerbTable: React.FC<VerbTableProps> = ({
               Guía de Aprendizaje
             </span>
             <h2 className="text-3xl sm:text-5xl font-black mt-1 tracking-tight text-white">
-              10 Verbos Esenciales
+              {verbsData.length} Verbos Esenciales
             </h2>
             <p className="text-indigo-100 mt-2 text-sm sm:text-base font-normal max-w-xl opacity-90 leading-relaxed">
               Domina las 3 formas gramaticales (Infinitivo, Pasado simple y Participio) con audio nativo y ejemplos cotidianos.
@@ -64,7 +65,7 @@ export const VerbTable: React.FC<VerbTableProps> = ({
 
           <div className="relative z-10 mt-6 flex flex-wrap items-center gap-2">
             <span className="text-xs font-semibold text-indigo-200">Verbos incluidos:</span>
-            {VERBS_DATA.map((v) => (
+            {verbsData.map((v) => (
               <button
                 key={v.id}
                 onClick={() => onSelectVerb(v)}
@@ -92,7 +93,7 @@ export const VerbTable: React.FC<VerbTableProps> = ({
             Dominio Global
           </span>
           <p className="text-xs text-slate-500 font-semibold mt-1">
-            {masteredCount} de 10 verbos dominados
+            {masteredCount} de {verbsData.length} verbos dominados
           </p>
           <div className="w-full bg-slate-100 h-2 rounded-full mt-4 overflow-hidden">
             <div 
@@ -132,10 +133,10 @@ export const VerbTable: React.FC<VerbTableProps> = ({
         {/* Filter Pills */}
         <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100">
           {[
-            { id: 'all', label: 'Todos (10)' },
-            { id: 'vowel-shift', label: 'Cambio de vocal (be, become, begin, bite, blow, break)' },
-            { id: 'identical-past-participle', label: 'Pasado = Participio (bring, build, buy)' },
-            { id: 'modal', label: 'Modal con suplente (can)' },
+            { id: 'all', label: `Todos (${verbsData.length})` },
+            { id: 'vowel-shift', label: 'Cambio de vocal' },
+            { id: 'identical-past-participle', label: 'Pasado = Participio' },
+            { id: 'modal', label: 'Modal con suplente' },
           ].map((cat) => (
             <button
               key={cat.id}

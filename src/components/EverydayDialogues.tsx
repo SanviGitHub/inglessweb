@@ -1,29 +1,35 @@
 import React, { useState } from 'react';
 import { Volume2, CheckCircle2, XCircle, Sparkles, MessageSquare, RotateCcw } from 'lucide-react';
 import { DIALOGUE_SCENARIOS } from '../data/verbsData';
-import { DialogueScenario } from '../types';
+import { DialogueScenario, VerbItem } from '../types';
 import { playSpeech } from '../utils/speech';
 
 interface EverydayDialoguesProps {
   audioRate: number;
   onMasterVerb?: (verbId: string) => void;
+  verbsData: VerbItem[];
 }
 
 export const EverydayDialogues: React.FC<EverydayDialoguesProps> = ({
   audioRate,
   onMasterVerb,
+  verbsData,
 }) => {
   const [selectedScenarioIndex, setSelectedScenarioIndex] = useState(0);
   const [userSelections, setUserSelections] = useState<Record<number, string>>({});
   const [showFeedback, setShowFeedback] = useState<Record<number, boolean>>({});
 
-  const scenario: DialogueScenario = DIALOGUE_SCENARIOS[selectedScenarioIndex];
+  const availableScenarios = DIALOGUE_SCENARIOS.filter(sc => 
+    verbsData.some(v => v.id === sc.verbId)
+  );
+
+  const scenario: DialogueScenario | undefined = availableScenarios[selectedScenarioIndex] || availableScenarios[0];
 
   const handleOptionPick = (exchangeIdx: number, option: string, correctWord?: string) => {
     setUserSelections((prev) => ({ ...prev, [exchangeIdx]: option }));
     setShowFeedback((prev) => ({ ...prev, [exchangeIdx]: true }));
 
-    if (option === correctWord && onMasterVerb) {
+    if (option === correctWord && onMasterVerb && scenario) {
       onMasterVerb(scenario.verbId);
     }
   };
@@ -42,6 +48,14 @@ export const EverydayDialogues: React.FC<EverydayDialoguesProps> = ({
     setShowFeedback({});
   };
 
+  if (!scenario) {
+    return (
+      <div className="bg-white border border-slate-200 rounded-3xl p-12 text-center text-slate-500 shadow-xs">
+        No hay diálogos disponibles para los verbos seleccionados actualmente.
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       
@@ -55,13 +69,13 @@ export const EverydayDialogues: React.FC<EverydayDialoguesProps> = ({
             Diálogos Cotidianos Interactivos
           </h2>
           <p className="text-indigo-100 text-sm sm:text-base mt-2 opacity-95 leading-relaxed">
-            Aprende a usar los 10 verbos en situaciones auténticas: ordenando comida, remodelando una casa o conversando con amigos. 
+            Aprende a usar los {verbsData.length} verbos en situaciones auténticas: ordenando comida, remodelando una casa o conversando con amigos. 
             Selecciona la forma correcta del verbo para completar cada turno de la conversación.
           </p>
 
           {/* Scenario Selector Pills */}
           <div className="flex flex-wrap gap-2 mt-5">
-            {DIALOGUE_SCENARIOS.map((sc, idx) => (
+            {availableScenarios.map((sc, idx) => (
               <button
                 key={sc.id}
                 id={`scenario-tab-${sc.id}`}

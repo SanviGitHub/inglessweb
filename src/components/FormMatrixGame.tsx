@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Sparkles, Trophy, RotateCcw, CheckCircle2, Volume2, Flame } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { VERBS_DATA } from '../data/verbsData';
 import { VerbItem } from '../types';
 import { playSpeech } from '../utils/speech';
 
@@ -17,27 +16,34 @@ interface MatrixCard {
 interface FormMatrixGameProps {
   audioRate: number;
   onMasterVerb?: (verbId: string) => void;
+  verbsData: VerbItem[];
 }
 
 export const FormMatrixGame: React.FC<FormMatrixGameProps> = ({
   audioRate,
   onMasterVerb,
+  verbsData,
 }) => {
   const [cards, setCards] = useState<MatrixCard[]>([]);
   const [selectedCards, setSelectedCards] = useState<MatrixCard[]>([]);
   const [matchedVerbIds, setMatchedVerbIds] = useState<string[]>([]);
   const [mistakeCount, setMistakeCount] = useState(0);
   const [roundCompleted, setRoundCompleted] = useState(false);
-  const [selectedGroup, setSelectedGroup] = useState<'first5' | 'last5' | 'all'>('first5');
+  const [selectedGroupIndex, setSelectedGroupIndex] = useState<number>(0);
+
+  // Group verbs into chunks of 5
+  const chunkSize = 5;
+  const groups: VerbItem[][] = [];
+  for (let i = 0; i < verbsData.length; i += chunkSize) {
+    groups.push(verbsData.slice(i, i + chunkSize));
+  }
 
   const initializeCards = () => {
     let subset: VerbItem[] = [];
-    if (selectedGroup === 'first5') {
-      subset = VERBS_DATA.slice(0, 5); // be, become, begin, bite, blow
-    } else if (selectedGroup === 'last5') {
-      subset = VERBS_DATA.slice(5, 10); // break, bring, build, buy, can
+    if (selectedGroupIndex === -1) {
+      subset = verbsData; // all
     } else {
-      subset = VERBS_DATA; // all 10
+      subset = groups[selectedGroupIndex] || [];
     }
 
     const generated: MatrixCard[] = [];
@@ -86,7 +92,7 @@ export const FormMatrixGame: React.FC<FormMatrixGameProps> = ({
 
   useEffect(() => {
     initializeCards();
-  }, [selectedGroup]);
+  }, [selectedGroupIndex, verbsData]);
 
   const handleCardClick = (card: MatrixCard) => {
     if (card.matched || selectedCards.some((c) => c.id === card.id)) return;
@@ -127,7 +133,7 @@ export const FormMatrixGame: React.FC<FormMatrixGameProps> = ({
       }
 
       // Check if all matched
-      const totalVerbsInRound = selectedGroup === 'all' ? 10 : 5;
+      const totalVerbsInRound = selectedGroupIndex === -1 ? verbsData.length : groups[selectedGroupIndex].length;
       if (matchedVerbIds.length + 1 >= totalVerbsInRound) {
         setRoundCompleted(true);
         confetti({
@@ -143,66 +149,59 @@ export const FormMatrixGame: React.FC<FormMatrixGameProps> = ({
     <div className="space-y-6">
       
       {/* Bento Header & Set Selector */}
-      <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-7 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 sm:p-7 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <span className="text-[10px] font-extrabold uppercase tracking-widest text-indigo-600 px-2.5 py-0.5 rounded-full bg-indigo-50 border border-indigo-100 mb-1.5 inline-block">
+          <span className="text-[10px] font-extrabold uppercase tracking-widest text-indigo-600 dark:text-indigo-400 px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-900/40 border border-indigo-100 dark:border-indigo-800 mb-1.5 inline-block">
             Memoria & Asociación
           </span>
-          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
             Rompecabezas de las 3 Formas
           </h2>
-          <p className="text-slate-500 text-sm mt-1">
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
             Une las 4 fichas del mismo verbo: <strong>Infinitivo</strong> + <strong>Pasado</strong> + <strong>Participio</strong> + <strong>Traducción</strong>.
           </p>
         </div>
 
         {/* Set Selector Pills */}
-        <div className="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200">
+        <div className="flex flex-wrap items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl border border-slate-200 dark:border-slate-700">
+          {groups.map((grp, idx) => (
+            <button
+              key={idx}
+              onClick={() => setSelectedGroupIndex(idx)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                selectedGroupIndex === idx
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+              }`}
+            >
+              Verbos {idx * chunkSize + 1} al {idx * chunkSize + grp.length}
+            </button>
+          ))}
           <button
-            onClick={() => setSelectedGroup('first5')}
+            onClick={() => setSelectedGroupIndex(-1)}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              selectedGroup === 'first5'
+              selectedGroupIndex === -1
                 ? 'bg-indigo-600 text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
-            Verbos 1 al 5
-          </button>
-          <button
-            onClick={() => setSelectedGroup('last5')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              selectedGroup === 'last5'
-                ? 'bg-indigo-600 text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            Verbos 6 al 10
-          </button>
-          <button
-            onClick={() => setSelectedGroup('all')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              selectedGroup === 'all'
-                ? 'bg-indigo-600 text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            Todos (10)
+            Todos ({verbsData.length})
           </button>
         </div>
       </div>
 
       {/* Game Stats Bento Bar */}
-      <div className="flex items-center justify-between bg-white border border-slate-200 rounded-2xl px-5 py-3 text-xs sm:text-sm shadow-xs">
-        <div className="flex items-center gap-6 text-slate-700">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl px-5 py-3 text-xs sm:text-sm shadow-xs gap-3">
+        <div className="flex items-center gap-6 text-slate-700 dark:text-slate-300">
           <div>
-            <span className="text-slate-400 font-bold uppercase text-[10px] tracking-wider block">Progreso ronda</span>
-            <span className="font-extrabold text-indigo-700 text-sm">
-              {matchedVerbIds.length} / {selectedGroup === 'all' ? 10 : 5} verbos
+            <span className="text-slate-400 dark:text-slate-500 font-bold uppercase text-[10px] tracking-wider block">Progreso ronda</span>
+            <span className="font-extrabold text-indigo-700 dark:text-indigo-400 text-sm">
+              {matchedVerbIds.length} / {selectedGroupIndex === -1 ? verbsData.length : groups[selectedGroupIndex]?.length || 0} verbos
             </span>
           </div>
           <div>
-            <span className="text-slate-400 font-bold uppercase text-[10px] tracking-wider block">Intentos fallidos</span>
-            <span className={`font-extrabold text-sm ${mistakeCount > 0 ? 'text-rose-600' : 'text-slate-700'}`}>
+            <span className="text-slate-400 dark:text-slate-500 font-bold uppercase text-[10px] tracking-wider block">Intentos fallidos</span>
+            <span className={`font-extrabold text-sm ${mistakeCount > 0 ? 'text-rose-600 dark:text-rose-500' : 'text-slate-700 dark:text-slate-300'}`}>
               {mistakeCount}
             </span>
           </div>
@@ -211,7 +210,7 @@ export const FormMatrixGame: React.FC<FormMatrixGameProps> = ({
         <button
           type="button"
           onClick={initializeCards}
-          className="flex items-center gap-1.5 text-xs text-indigo-600 hover:text-indigo-800 font-bold px-3 py-1.5 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200 transition-colors cursor-pointer"
+          className="flex items-center justify-center gap-1.5 text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-bold px-3 py-1.5 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer"
         >
           <RotateCcw className="w-3.5 h-3.5" />
           <span>Barajar de nuevo</span>
@@ -225,11 +224,11 @@ export const FormMatrixGame: React.FC<FormMatrixGameProps> = ({
             const isSelected = selectedCards.some((c) => c.id === card.id);
             const isMatched = card.matched;
 
-            let cardStyle = 'bg-white border-2 border-slate-200 text-slate-800 hover:border-indigo-500 hover:bg-indigo-50/40 shadow-xs';
+            let cardStyle = 'bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:border-indigo-500 dark:hover:border-indigo-500 hover:bg-indigo-50/40 dark:hover:bg-indigo-900/30 shadow-xs';
             if (isMatched) {
-              cardStyle = 'bg-emerald-50 border-2 border-emerald-300 text-emerald-800 opacity-60 pointer-events-none';
+              cardStyle = 'bg-emerald-50 dark:bg-emerald-900/20 border-2 border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-400 opacity-60 pointer-events-none';
             } else if (isSelected) {
-              cardStyle = 'bg-indigo-50 border-2 border-indigo-600 text-indigo-900 shadow-sm scale-102';
+              cardStyle = 'bg-indigo-50 dark:bg-indigo-900/30 border-2 border-indigo-600 dark:border-indigo-500 text-indigo-900 dark:text-indigo-100 shadow-sm scale-102';
             }
 
             return (
@@ -241,7 +240,7 @@ export const FormMatrixGame: React.FC<FormMatrixGameProps> = ({
                 className={`p-4 rounded-2xl text-center flex flex-col justify-center items-center gap-1 min-h-[95px] transition-all duration-150 select-none cursor-pointer ${cardStyle}`}
               >
                 <span className={`text-[10px] uppercase font-bold tracking-wider ${
-                  isSelected ? 'text-indigo-700' : 'text-slate-400'
+                  isSelected ? 'text-indigo-700 dark:text-indigo-400' : 'text-slate-400 dark:text-slate-500'
                 }`}>
                   {card.typeLabel}
                 </span>
@@ -251,7 +250,7 @@ export const FormMatrixGame: React.FC<FormMatrixGameProps> = ({
                   {card.text}
                 </span>
                 {isMatched && (
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-1" />
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-500 mt-1" />
                 )}
               </button>
             );
@@ -259,15 +258,15 @@ export const FormMatrixGame: React.FC<FormMatrixGameProps> = ({
         </div>
       ) : (
         /* Victory Bento Card */
-        <div className="bg-white border border-slate-200 rounded-3xl p-8 sm:p-12 text-center space-y-5 shadow-xs">
-          <div className="w-16 h-16 rounded-3xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto border border-indigo-100">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 sm:p-12 text-center space-y-5 shadow-xs">
+          <div className="w-16 h-16 rounded-3xl bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mx-auto border border-indigo-100 dark:border-indigo-800">
             <Trophy className="w-8 h-8" />
           </div>
           <div>
-            <h3 className="text-2xl sm:text-3xl font-black text-slate-900">
+            <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-slate-100">
               ¡Felicitaciones! Has completado el set
             </h3>
-            <p className="text-slate-500 text-sm max-w-md mx-auto mt-1">
+            <p className="text-slate-500 dark:text-slate-400 text-sm max-w-md mx-auto mt-1">
               Conectaste exitosamente las 3 formas gramaticales y la traducción con solo {mistakeCount} fallos.
             </p>
           </div>

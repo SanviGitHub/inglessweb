@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   CheckCircle2, 
   XCircle, 
@@ -13,18 +13,19 @@ import {
   BookOpen
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { EXERCISE_QUESTIONS, VERBS_DATA } from '../data/verbsData';
-import { ExerciseQuestion } from '../types';
+import { VerbItem, ExerciseQuestion } from '../types';
 import { playSpeech } from '../utils/speech';
 
 interface PracticeExercisesProps {
   onMasterVerb: (verbId: string) => void;
   audioRate: number;
+  verbsData: VerbItem[];
 }
 
 export const PracticeExercises: React.FC<PracticeExercisesProps> = ({
   onMasterVerb,
   audioRate,
+  verbsData,
 }) => {
   const [selectedVerbFilter, setSelectedVerbFilter] = useState<string>('all');
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -35,13 +36,44 @@ export const PracticeExercises: React.FC<PracticeExercisesProps> = ({
   const [highestStreak, setHighestStreak] = useState(0);
   const [answeredCount, setAnsweredCount] = useState(0);
 
-  const filteredQuestions: ExerciseQuestion[] = EXERCISE_QUESTIONS.filter((q) => {
+  const dynamicQuestions: ExerciseQuestion[] = useMemo(() => {
+    return verbsData.flatMap(v => {
+      return v.examples.map(ex => {
+        // Generate distractors (other forms of the same verb)
+        const optsSet = new Set([v.infinitive, v.past, v.participle]);
+        if (v.id === 'can') optsSet.add('been able to');
+        optsSet.add(`${v.infinitive}ed`);
+        
+        const options = Array.from(optsSet)
+          .filter(opt => opt !== ex.highlightWord)
+          .sort(() => Math.random() - 0.5)
+          .slice(0, 3)
+          .concat(ex.highlightWord)
+          .sort(() => Math.random() - 0.5);
+
+        return {
+          id: ex.id,
+          type: 'fill-blank',
+          verbId: v.id,
+          sentencePrompt: ex.english.replace(new RegExp(`\\b${ex.highlightWord}\\b`, 'i'), '___'),
+          sentenceTranslation: ex.spanish,
+          correctAnswer: ex.highlightWord,
+          options: options,
+          explanation: `La forma correcta es "${ex.highlightWord}" porque la oración está en ${ex.tenseLabel.toLowerCase()}.`,
+          targetTense: ex.tense,
+          contextHint: ex.context,
+        };
+      });
+    }).sort(() => Math.random() - 0.5);
+  }, [verbsData]);
+
+  const filteredQuestions: ExerciseQuestion[] = dynamicQuestions.filter((q) => {
     if (selectedVerbFilter === 'all') return true;
     return q.verbId === selectedVerbFilter;
   });
 
   const currentQ = filteredQuestions[currentIndex] || filteredQuestions[0];
-  const targetVerbObj = VERBS_DATA.find((v) => v.id === currentQ?.verbId);
+  const targetVerbObj = verbsData.find((v) => v.id === currentQ?.verbId);
 
   const handleSelectOption = (opt: string) => {
     if (isAnswerSubmitted) return;
@@ -132,9 +164,9 @@ export const PracticeExercises: React.FC<PracticeExercisesProps> = ({
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
-              Todos ({EXERCISE_QUESTIONS.length})
+              Todos ({dynamicQuestions.length})
             </button>
-            {VERBS_DATA.map((v) => (
+            {verbsData.map((v) => (
               <button
                 key={v.id}
                 onClick={() => { setSelectedVerbFilter(v.id); setCurrentIndex(0); setIsAnswerSubmitted(false); }}
