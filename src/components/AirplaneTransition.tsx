@@ -12,7 +12,7 @@ export const AirplaneTransition: React.FC<AirplaneTransitionProps> = ({ onComple
       onComplete();
     }, 3000);
     return () => clearTimeout(timer);
-  }, [onComplete]);
+  }, []); // Remove onComplete from dependency array so it never resets the timer
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden bg-gradient-to-b from-sky-400 to-sky-200 flex items-center justify-center animate-in fade-in duration-300">

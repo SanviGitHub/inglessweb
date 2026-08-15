@@ -40,6 +40,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
           src="/sanvycorporation.png"
           alt="Sanvy Corporation"
           onLoad={() => setImageLoaded(true)}
+          onError={() => setImageLoaded(true)} // Fail gracefully if image is missing
           className={`w-32 h-32 sm:w-40 sm:h-40 object-cover rounded-full border-2 border-slate-200 dark:border-slate-800 shadow-sm transition-all duration-700 ${
             imageLoaded ? 'scale-100 opacity-100' : 'scale-90 opacity-0'
           }`}
